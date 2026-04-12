@@ -5,5 +5,7 @@
 
 > **Fork notice:** This is a fork of [d3vilh/openvpn-server-config](https://github.com/d3vilh/openvpn-server-config) with additional security hardening. See [CHANGELOG.md](CHANGELOG.md) for details.
 
+![Version](https://img.shields.io/badge/version-v0.4.0-blue)
+
 This is OpenVPN server and client configuration templates for [openvpn-ui](https://github.com/d3vilh/openvpn-ui) project.
 You'll need it when building openvpn-ui from scratch.

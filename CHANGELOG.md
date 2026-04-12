@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v0.4.0] - 2026-04-12
 
 ### Security
 - Fixed command injection vulnerability in `KillSession` and `Signal` via newline characters in Management Interface inputs

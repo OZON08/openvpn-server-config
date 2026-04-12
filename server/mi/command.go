@@ -19,13 +19,13 @@ func SendCommand(conn net.Conn, cmd string) error {
 	return nil
 }
 
+const maxResponseLines = 10000
+
 // ReadResponse .
 func ReadResponse(reader *bufio.Reader) (string, error) {
-	var finished = false
 	var result = ""
-	i := 0
 
-	for finished == false {
+	for i := 0; i < maxResponseLines; i++ {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			log.Error(line, err)
@@ -36,9 +36,8 @@ func ReadResponse(reader *bufio.Reader) (string, error) {
 		if strings.Index(line, "END") == 0 ||
 			strings.Index(line, "SUCCESS:") == 0 ||
 			strings.Index(line, "ERROR:") == 0 {
-			finished = true
+			return result, nil
 		}
-		i++
 	}
-	return result, nil
+	return "", fmt.Errorf("response exceeded maximum line limit of %d", maxResponseLines)
 }

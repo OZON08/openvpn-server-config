@@ -12,8 +12,8 @@ var defaultConfig = Config{
 	ServerAddress:     "127.0.0.1",
 	Port:              1194,
 	OpenVpnServerPort: "1194",
-	Cipher:            "AES-256-CBC",
-	Auth:              "SHA256",
+	Cipher:            "AES-256-GCM",
+	Auth:              "SHA512",
 	Ca:                "ca.crt",
 }
 
@@ -47,7 +47,9 @@ func GetText(tpl string, c Config) (string, error) {
 		return "", err
 	}
 	buf := new(bytes.Buffer)
-	t.Execute(buf, c)
+	if err = t.Execute(buf, c); err != nil {
+		return "", err
+	}
 	return buf.String(), nil
 }
 
@@ -63,5 +65,5 @@ func SaveToFile(tplPath string, c Config, destPath string) error {
 		return err
 	}
 
-	return os.WriteFile(destPath, []byte(str), 0644)
+	return os.WriteFile(destPath, []byte(str), 0600)
 }

@@ -10,7 +10,7 @@ import (
 // Don't think these defaults are ever used -- see models/models.go
 var defaultConfig = Config{
 	FuncMode:                 0, // 0 = standard authentication (cert, cert + password), 1 = 2FA authentication (cert + OTP)
-	Management:               "0.0.0.0 2080",
+	Management:               "127.0.0.1 2080",
 	ScriptSecurity:           "",
 	UserPassVerify:           "",
 	Device:                   "tun",
@@ -114,7 +114,9 @@ func GetText(tpl string, c Config) (string, error) {
 		return "", err
 	}
 	buf := new(bytes.Buffer)
-	t.Execute(buf, c)
+	if err = t.Execute(buf, c); err != nil {
+		return "", err
+	}
 	return buf.String(), nil
 }
 
@@ -130,5 +132,5 @@ func SaveToFile(tplPath string, c Config, destPath string) error {
 		return err
 	}
 
-	return os.WriteFile(destPath, []byte(str), 0644)
+	return os.WriteFile(destPath, []byte(str), 0600)
 }

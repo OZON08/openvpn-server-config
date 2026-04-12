@@ -47,6 +47,9 @@ func ParseStats(input string) (*LoadStats, error) {
 
 	dString := stripPrefix(line, "SUCCESS: ")
 	dElements := strings.Split(dString, ",")
+	if len(dElements) < 3 {
+		return nil, fmt.Errorf("Bad response: expected 3 fields, got %d", len(dElements))
+	}
 	var err error
 	ls.NClients, err = getLStatsValue(dElements[0])
 	if err != nil {
@@ -74,11 +77,20 @@ func ParseStatus(input string) (*Status, error) {
 		c := fields[0]
 		switch {
 		case c == "TITLE":
+			if len(fields) < 2 {
+				continue
+			}
 			s.Title = fields[1]
 		case c == "TIME":
+			if len(fields) < 3 {
+				continue
+			}
 			s.Time = fields[1]
 			s.TimeT = fields[2]
 		case c == "ROUTING_TABLE":
+			if len(fields) < 6 {
+				continue
+			}
 			item := &RoutingPath{
 				VirtualAddress: fields[1],
 				CommonName:     fields[2],
@@ -88,6 +100,9 @@ func ParseStatus(input string) (*Status, error) {
 			}
 			s.RoutingTable = append(s.RoutingTable, item)
 		case c == "CLIENT_LIST":
+			if len(fields) < 12 {
+				continue
+			}
 			bytesR, _ := strconv.ParseUint(fields[5], 10, 64)
 			bytesS, _ := strconv.ParseUint(fields[6], 10, 64)
 			item := &OVClient{

@@ -55,7 +55,9 @@ func GetText(tpl string, c Config) (string, error) {
 		return "", err
 	}
 	buf := new(bytes.Buffer)
-	t.Execute(buf, c)
+	if err = t.Execute(buf, c); err != nil {
+		return "", err
+	}
 	return buf.String(), nil
 }
 
@@ -71,5 +73,5 @@ func SaveToFile(tplPath string, c Config, destPath string) error {
 		return err
 	}
 
-	return os.WriteFile(destPath, []byte(str), 0644)
+	return os.WriteFile(destPath, []byte(str), 0600)
 }

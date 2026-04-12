@@ -2,7 +2,10 @@ package mi
 
 import (
 	"bufio"
+	"fmt"
 	"net"
+	"strings"
+	"time"
 )
 
 // Client is used to connect to OpenVPN Management Interface
@@ -59,6 +62,9 @@ func (c *Client) GetLoadStats() (*LoadStats, error) {
 
 // KillSession kills OpenVPN connection
 func (c *Client) KillSession(cname string) (string, error) {
+	if err := validateMIInput(cname); err != nil {
+		return "", err
+	}
 	str, err := c.Execute("kill " + cname)
 	if err != nil {
 		return "", err
@@ -68,11 +74,23 @@ func (c *Client) KillSession(cname string) (string, error) {
 
 // Signal sends signal to daemon
 func (c *Client) Signal(signal string) error {
+	if err := validateMIInput(signal); err != nil {
+		return err
+	}
 	str, err := c.Execute("signal " + signal)
 	if err != nil {
 		return err
 	}
 	return ParseSignal(str)
+}
+
+// validateMIInput rejects inputs containing newline characters to prevent
+// command injection via the OpenVPN Management Interface protocol.
+func validateMIInput(s string) error {
+	if strings.ContainsAny(s, "\r\n") {
+		return fmt.Errorf("invalid input: newline characters are not allowed")
+	}
+	return nil
 }
 
 // Restarts the OpenVPN server
@@ -86,13 +104,16 @@ func (c *Client) RestartServer() error {
 	return nil
 }
 
+const miTimeout = 10 * time.Second
+
 // Execute connects to the OpenVPN server, sends command and reads response
 func (c *Client) Execute(cmd string) (string, error) {
-	conn, err := net.Dial(c.MINetwork, c.MIAddress)
+	conn, err := net.DialTimeout(c.MINetwork, c.MIAddress, miTimeout)
 	if err != nil {
 		return "", err
 	}
 	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(miTimeout))
 
 	buf := bufio.NewReader(conn)
 	buf.ReadString('\n') //read welcome message

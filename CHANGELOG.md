@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.5.0] - 2026-10-31
+
+### Security
+- Fixed shell injection through the EasyRSA vars file: `GetText` and `SaveToFile` now reject string values containing anything other than letters, digits, spaces and `. , _ @ & + ( ) : -`
+- Added optional `MIPassword` to the Management Interface client, so the interface can be protected with a `pw-file`
+- Moved the line break check for Management Interface input into the shared send path, which also covers `Execute` and `SendCommand`
+- Fixed use of the command as a format string in `SendCommand`
+- Server and client configs now reject line breaks in single-value fields, and client configs reject key material that could close its inline block
+- These checks do not make configs safe for untrusted input: fields such as `ScriptSecurity`, `Route` and the custom options hold complete OpenVPN directives by design, so only trusted administrators may set them
+- `SaveToFile` now tightens existing files to `0600` before changing their content. Files are still updated in place, so containers that bind mount a single file see the change
+
+### Changed
+- `go.mod` and `go.sum` added, module path is `github.com/OZON08/openvpn-server-config`, requires Go 1.26.10
+- Dependabot now checks Go modules
+- Line endings normalized to LF through `.gitattributes`
+- Template handling moved into the shared package `internal/render`
+
+### Fixed
+- `client/config` template no longer references the missing field `Keysize`, which made rendering fail
+- Client templates render the `tls-crypt` block only when `Ta` is set, and `client/config` now includes it
+- `ReadResponse` skips asynchronous `>` notifications, which made single-line replies fail to parse
+- `ParseStatus` returns an error for `ERROR:` replies and malformed rows instead of reporting no connected clients
+- Outdated tests corrected and test coverage added for `client/client-config` and the Management Interface login
+
 ## [v0.4.0] - 2026-04-12
 
 ### Security

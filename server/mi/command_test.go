@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	mi "github.com/d3vilh/openvpn-server-config/server/mi"
+	mi "github.com/OZON08/openvpn-server-config/server/mi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,4 +32,15 @@ func TestSendCommandFailure(t *testing.T) {
 	conn := &net.IPConn{}
 	err := mi.SendCommand(conn, "dummy")
 	assert.NotNil(t, err)
+}
+
+func TestReadResponseSkipsAsyncNotifications(t *testing.T) {
+	reader := bufio.NewReader(strings.NewReader(">HOLD:Waiting for hold release:0\r\n>BYTECOUNT:1,2\r\nSUCCESS: pid=42\r\n"))
+
+	response, err := mi.ReadResponse(reader)
+
+	assert.Nil(t, err)
+	pid, err := mi.ParsePid(response)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(42), pid)
 }

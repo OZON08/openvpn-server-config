@@ -9,7 +9,6 @@ persist-tun
 persist-key
 remote-cert-tls server
 cipher {{ .Cipher }}
-#keysize {{ .Keysize }} # depricated in version 2.4
 auth {{ .Auth }}
 auth-nocache
 tls-client
@@ -25,3 +24,8 @@ verb 3
 <key>
 {{ .Key }}
 </key>
+{{- if .Ta }}
+<tls-crypt>
+{{ .Ta }}
+</tls-crypt>
+{{- end }}

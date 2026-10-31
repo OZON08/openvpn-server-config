@@ -3,7 +3,7 @@ package mi_test
 import (
 	"testing"
 
-	mi "github.com/d3vilh/openvpn-server-config/server/mi"
+	mi "github.com/OZON08/openvpn-server-config/server/mi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,9 +23,9 @@ var responseLoadStatsBroken = `SUCCESS: nclients=12,bytesin,bytesout=1589364037
 `
 var responseStatus = `TITLE,OpenVPN 2.3.2 x86_64-pc-linux-gnu [SSL (OpenSSL)] [LZO] [EPOLL] [PKCS11] [eurephia] [MH] [IPv6] built on Dec  1 2014
 TIME,Mon Dec 26 21:02:26 2016,1482782546
-HEADER,CLIENT_LIST,Common Name,Real Address,Virtual Address,Bytes Received,Bytes Sent,Connected Since,Connected Since (time_t),Username
-CLIENT_LIST,democlient1.example.com,11.112.113.114:58978,10.8.0.30,131180,414251,Mon Dec 26 20:57:17 2016,1482782237,UNDEF
-CLIENT_LIST,rpi-v3,11.112.113.114:35331,10.8.0.14,5107,6909,Mon Dec 26 20:59:42 2016,1482782382,UNDEF
+HEADER,CLIENT_LIST,Common Name,Real Address,Virtual Address,Virtual IPv6 Address,Bytes Received,Bytes Sent,Connected Since,Connected Since (time_t),Username,Client ID,Peer ID,Data Channel Cipher
+CLIENT_LIST,democlient1.example.com,11.112.113.114:58978,10.8.0.30,,131180,414251,Mon Dec 26 20:57:17 2016,1482782237,UNDEF,0,1,AES-256-GCM
+CLIENT_LIST,rpi-v3,11.112.113.114:35331,10.8.0.14,,5107,6909,Mon Dec 26 20:59:42 2016,1482782382,UNDEF,1,0,AES-256-GCM
 HEADER,ROUTING_TABLE,Virtual Address,Common Name,Real Address,Last Ref,Last Ref (time_t)
 ROUTING_TABLE,10.8.0.30,democlient1.example.com,11.112.113.114:58978,Mon Dec 26 21:02:25 2016,1482782545
 ROUTING_TABLE,10.8.0.14,rpi-v3,11.112.113.114:35331,Mon Dec 26 20:59:43 2016,1482782383
@@ -117,6 +117,8 @@ func TestStatusParser(t *testing.T) {
 				ConnectedSince:  "Mon Dec 26 20:57:17 2016",
 				ConnectedSinceT: "1482782237",
 				Username:        "UNDEF",
+				ClientID:        "0",
+				PeerID:          "1",
 			},
 			{
 				CommonName:      "rpi-v3",
@@ -127,6 +129,8 @@ func TestStatusParser(t *testing.T) {
 				ConnectedSince:  "Mon Dec 26 20:59:42 2016",
 				ConnectedSinceT: "1482782382",
 				Username:        "UNDEF",
+				ClientID:        "1",
+				PeerID:          "0",
 			},
 		},
 		RoutingTable: []*mi.RoutingPath{
@@ -164,4 +168,28 @@ func TestKillSessionWrongNrOfLines(t *testing.T) {
 func TestKillSessionResponseError(t *testing.T) {
 	_, err := mi.ParseKillSession(responseKillSessionError)
 	assert.NotNil(t, err)
+}
+
+func TestStatusParserRejectsUnsupportedClientRow(t *testing.T) {
+	// Format of OpenVPN 2.3, silently dropping it would look like "no clients connected"
+	input := "CLIENT_LIST,rpi-v3,11.112.113.114:35331,10.8.0.14,5107,6909,Mon Dec 26 20:59:42 2016,1482782382,UNDEF\nEND\n"
+
+	_, err := mi.ParseStatus(input)
+
+	assert.Error(t, err)
+}
+
+func TestStatusParserReturnsServerError(t *testing.T) {
+	_, err := mi.ParseStatus("ERROR: status command failed\r\n")
+	assert.Error(t, err)
+}
+
+func TestStatusParserRejectsShortRoutingRow(t *testing.T) {
+	_, err := mi.ParseStatus("ROUTING_TABLE,10.8.0.30,client\nEND\n")
+	assert.Error(t, err)
+}
+
+func TestStatusParserRejectsNonNumericBytes(t *testing.T) {
+	_, err := mi.ParseStatus("CLIENT_LIST,cn,1.2.3.4:1,10.8.0.2,,many,0,now,0,UNDEF,0,0,AES-256-GCM\nEND\n")
+	assert.Error(t, err)
 }
